@@ -22,6 +22,16 @@ def encode_target(df, target_column):
     return df
 
 def scale_columns(df, columns):
-    scaler = StandardScaler()
-    df[[columns]] = scaler.fit_transform(df[[columns]])
-    return df, scaler
+    scaler_dict = {}
+    for col in columns:
+        scaler = StandardScaler()
+        df[[col]] = scaler.fit_transform(df[[col]])
+        scaler_dict[col] = scaler
+    return df, scaler_dict
+
+
+def transform_input(input_df, scaler_dict):
+    for col, scaler in scaler_dict.items():
+        if col in input_df.columns:
+            input_df[[col]] = scaler.transform(input_df[[col]])
+    return input_df

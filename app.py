@@ -7,30 +7,30 @@ from src.preprocessing import (
     handle_missing_values,
     drop_unused_columns,
     split_features_target,
-    train_test_split_data
+    train_test_split_data,
+    transform_input
 )
 from src.model import get_models, tune_model, evaluate_model
 from src.util import get_user_input
 from src.visualization import data_table, plot_class_distribution, plot_price_boxplot
 
-from page.login import login 
+# from page.login import login 
 
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+# if "authenticated" not in st.session_state:
+#     st.session_state["authenticated"] = False
 
-if not st.session_state["authenticated"]:
-    login()
-    st.stop()  
+# if not st.session_state["authenticated"]:
+#     login()
+#     st.stop()  
 
 df = load_data('data/DataSparePart.xlsx')
 
 df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-df = drop_unused_columns(df, ['nama_barang', 'unnamed:_4'])
+df = drop_unused_columns(df, ['nama_barang'])
 df = handle_missing_values(df)
 
 df = encode_target(df, 'harga_kelas')
-df, scaler = scale_columns(df, 'modal')
 
 st.sidebar.title("Navigasi")
 menu = st.sidebar.radio("Pilih halaman", ["Visualisasi", "Prediksi"])
@@ -49,11 +49,19 @@ if menu == "Visualisasi":
 
 elif menu == "Prediksi":
     st.title("🎯 Prediksi Kelas Harga dengan Beberapa Algoritma")
+    df, scaler_dict = scale_columns(df, ['harga', 'diskon'])
 
     X, y = split_features_target(df, 'harga_kelas')
-    input_df = get_user_input(X.columns, st)
+    
 
-    X_train, X_test, y_train, y_test = train_test_split_data(X, y)
+    input_df = get_user_input(X.columns, st)
+    input_df = transform_input(input_df, scaler_dict) 
+
+
+    data_table(input_df)
+    data_table(df)
+
+    X_train, X_test, y_train, y_test = train_test_split_data(X, y, test_size=0.2, random_state=42)
 
     model_names = list(get_models().keys())
     model_name = st.selectbox("Pilih algoritma", model_names)
