@@ -1,11 +1,7 @@
-# src/login.py
+# page/login.py
 
 import streamlit as st
-
-USER_CREDENTIALS = {
-    "admin": "admin123",
-    "user": "user123"
-}
+from src.db import check_user_credentials
 
 def login():
     st.title("🔐 Halaman Login")
@@ -14,8 +10,9 @@ def login():
     login_button = st.button("Login")
 
     if login_button:
-        if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
+        if check_user_credentials(username, password):
             st.session_state["authenticated"] = True
+            st.session_state["username"] = username
             st.success("✅ Login berhasil!")
             st.rerun()
         else:
