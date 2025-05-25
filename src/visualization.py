@@ -14,7 +14,7 @@ def plot_class_distribution(df, target_column='harga_kelas'):
     sns.countplot(x=target_column, data=df, ax=ax)
     st.pyplot(fig)
 
-def plot_price_boxplot(df, price_column='modal', target_column='harga_kelas'):
+def plot_price_boxplot(df, price_column='harga', target_column='harga_kelas'):
     if price_column in df.columns:
         st.subheader("Boxplot modal per Harga Kelas")
         fig, ax = plt.subplots()
