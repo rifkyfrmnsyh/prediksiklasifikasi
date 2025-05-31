@@ -35,7 +35,24 @@ df = handle_missing_values(df)
 df = encode_target(df, 'harga_kelas')
 
 st.sidebar.title("Navigasi")
-menu = st.sidebar.radio("Pilih halaman", ["Visualisasi", "Prediksi", "Riwayat Prediksi"])
+
+role = st.session_state.get("role", "user") 
+if role == "admin":
+    options = ["Visualisasi", "Prediksi", "Riwayat Prediksi"]
+else:
+    options = ["Riwayat Prediksi"]
+
+menu = st.sidebar.radio("Pilih halaman", options)
+
+if st.sidebar.button("🔒 Keluar"):
+    for key in ["authenticated", "username", "role"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.success("Anda telah keluar.")
+    st.rerun()
+
+
+
 
 if menu == "Visualisasi":
     st.title("📑 Tabel Data")

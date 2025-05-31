@@ -12,11 +12,15 @@ def get_connection():
 def check_user_credentials(username, password):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+    cursor.execute("SELECT role FROM users WHERE username=%s AND password=%s", (username, password))
     result = cursor.fetchone()
     cursor.close()
     conn.close()
-    return result is not None
+    if result:
+        return result[0] 
+    return None
+
+
 
 def save_prediction(username, input_df, prediction_label):
     conn = get_connection()
