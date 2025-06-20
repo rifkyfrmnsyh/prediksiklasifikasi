@@ -14,8 +14,6 @@ def check_user_credentials(username, password):
         .eq("username", username) \
         .eq("password", password) \
         .execute()
-    
-    st.write("DEBUG:", result)
 
     if result.data:
         return result.data[0]["role"]
