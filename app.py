@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from src.data_loader import load_data
 from src.preprocessing import (
@@ -11,10 +12,9 @@ from src.preprocessing import (
     transform_input
 )
 
-from src.db import save_prediction, fetch_predictions
-from src.model import get_models, tune_model, evaluate_model
+from src.db import save_prediction, fetch_predictions, update_prediction, delete_prediction
+from src.model import tune_model, evaluate_model
 from src.util import get_user_input
-from src.visualization import data_table, plot_class_distribution, plot_price_boxplot
 
 from page.login import login 
 
@@ -38,9 +38,9 @@ st.sidebar.title("Navigasi")
 
 role = st.session_state.get("role", "user") 
 if role == "admin":
-    options = ["Visualisasi", "Prediksi", "Riwayat Prediksi"]
+    options = ["List Barang","Prediksi", "Riwayat Prediksi"]
 else:
-    options = ["Riwayat Prediksi"]
+    options = ["List Barang"]
 
 menu = st.sidebar.radio("Pilih halaman", options)
 
@@ -51,22 +51,7 @@ if st.sidebar.button("🔒 Keluar"):
     st.success("Anda telah keluar.")
     st.rerun()
 
-
-
-
-if menu == "Visualisasi":
-    st.title("📑 Tabel Data")
-    data_table(df)
-
-    st.title("📊 Statistik Deskriptif")
-    st.write(df.describe())
-
-    st.title("📈 Visualisasi Data")
-    plot_class_distribution(df)
-    st.write(df['harga_kelas'].value_counts())
-    plot_price_boxplot(df)
-
-elif menu == "Prediksi":
+if menu == "Prediksi":
     st.title("🎯 Prediksi Kelas Harga")
 
     df, scaler_dict = scale_columns(df, ['harga', 'diskon'])
@@ -97,28 +82,56 @@ elif menu == "Prediksi":
 
         if "username" in st.session_state:
             save_prediction(
-                st.session_state["username"],
                 input_df,
                 pred_label,
             )
 
-
 elif menu == "Riwayat Prediksi":
-    st.title("🕒 Riwayat Prediksi")
+    st.title("📜 Riwayat Prediksi")
 
     if "username" not in st.session_state:
         st.warning("Anda belum login.")
         st.stop()
 
-    from src.db import fetch_predictions
+    df = fetch_predictions()
 
-    username = st.session_state["username"]
-    results = fetch_predictions(username)
-
-    if not results:
-        st.info("Belum ada prediksi yang tersimpan.")
+    if df.empty:
+        st.info("Tidak ada riwayat prediksi yang ditemukan.")
     else:
-        import pandas as pd
-        df_pred = pd.DataFrame(results, columns=["nama_barang", "harga", "diskon", "prediction_label"])
-        st.dataframe(df_pred)
+        edited_df = st.data_editor(
+            df,
+            column_config={"id": st.column_config.Column(disabled=True)},
+            num_rows="dynamic",
+            use_container_width=True
+        )
+
+        if st.button("Simpan Perubahan"):
+            for _, row in edited_df.iterrows():
+                update_prediction(
+                    row["id"],
+                    row["nama_barang"],
+                    row["harga"],
+                    row["diskon"],
+                    row["prediction_label"]
+                )
+            st.success("Semua data berhasil diperbarui.")
+            st.rerun()
+
+        delete_id = st.selectbox("Pilih ID untuk dihapus:", df["id"])
+        if st.button("Hapus Baris"):
+            delete_prediction(delete_id)
+            st.warning("Data berhasil dihapus.")
+            st.rerun()
+
+elif menu == "List Barang":
+    if "username" not in st.session_state:
+        st.warning("Anda belum login.")
+        st.stop()
+    st.success("Selamat Datang! Di SparePart Aldi Motor",   icon="👋")
+    st.title("List Barang")
+    df = load_data('data/DataSparePart.xlsx')
+    df = df.drop(columns=['harga_kelas'], errors='ignore')
+
+
+    st.dataframe(df.head(9))
 

@@ -15,4 +15,4 @@ def login():
             st.success("Login berhasil!")
             st.rerun()
         else:
-            st.error("Username atau password salah.")
+            st.error("Username atau password tidak ditemukan.")
