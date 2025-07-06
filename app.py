@@ -38,7 +38,7 @@ st.sidebar.title("Navigasi")
 
 role = st.session_state.get("role", "user") 
 if role == "admin":
-    options = ["List Barang","Prediksi", "Riwayat Prediksi"]
+    options = ["List Barang","Prediksi", "Kelola Barang"]
 else:
     options = ["List Barang"]
 
@@ -86,42 +86,76 @@ if menu == "Prediksi":
                 pred_label,
             )
 
-elif menu == "Riwayat Prediksi":
-    st.title("📜 Riwayat Prediksi")
+elif menu == "Kelola Barang":
+    st.title("📦 Kelola Data Barang")
 
-    if "username" not in st.session_state:
-        st.warning("Anda belum login.")
-        st.stop()
+    tab_riwayat ,tab_ubah, tab_hapus = st.tabs([ "📜 Riwayat Prediksi","✏️ Ubah Barang", "❌ Hapus Barang"])
+ 
+    try:
+        all_items_df = fetch_predictions()
+    except Exception as e:
+        st.error(f"Gagal memuat data barang: {e}")
+        all_items_df = pd.DataFrame() 
+    
+    with tab_riwayat:
+        st.header("Riwayat Prediksi Barang")
+        if all_items_df.empty:
+            st.info("Tidak ada riwayat prediksi. Silakan lakukan prediksi terlebih dahulu.")
+        else:
+            st.dataframe(all_items_df, use_container_width=True)
+            st.download_button(
+                label="Unduh Riwayat Prediksi",
+                data=all_items_df.to_csv(index=False).encode('utf-8'),
+                file_name='riwayat_prediksi.csv',
+                mime='text/csv'
+            )
 
-    df = fetch_predictions()
+    with tab_ubah:
+        st.header("Pilih dan Ubah Data Barang")
+        if all_items_df.empty:
+            st.info("Tidak ada data barang yang bisa diubah. Silakan tambah barang terlebih dahulu.")
+        else:
+            item_to_edit_id = st.selectbox(
+                "Pilih barang yang akan diubah:",
+                options=all_items_df["id"],
+                format_func=lambda x: f"ID: {x} - {all_items_df.loc[all_items_df['id'] == x, 'nama_barang'].values[0]}",
+                key="select_edit"
+            )
+            
+            selected_item = all_items_df[all_items_df["id"] == item_to_edit_id].iloc[0]
 
-    if df.empty:
-        st.info("Tidak ada riwayat prediksi yang ditemukan.")
-    else:
-        edited_df = st.data_editor(
-            df,
-            column_config={"id": st.column_config.Column(disabled=True)},
-            num_rows="dynamic",
-            use_container_width=True
-        )
+            with st.form("form_ubah_barang"):
+                st.write(f"**Mengubah Data untuk ID:** {selected_item['id']}")
+                
+                updated_nama = st.text_input("Nama Barang", value=selected_item["nama_barang"])
 
-        if st.button("Simpan Perubahan"):
-            for _, row in edited_df.iterrows():
-                update_prediction(
-                    row["id"],
-                    row["nama_barang"],
-                    row["harga"],
-                    row["diskon"],
-                    row["prediction_label"]
+                update_submitted = st.form_submit_button("Simpan Perubahan")
+                if update_submitted:
+                    update_prediction(
+                        item_to_edit_id, updated_nama
+                    )
+                    st.success(f"Data barang '{updated_nama}' berhasil diperbarui!", icon="🔄")
+                    st.rerun() 
+
+    with tab_hapus:
+        st.header("Hapus Data Barang")
+        if all_items_df.empty:
+            st.info("Tidak ada data barang yang bisa dihapus.")
+        else:
+            with st.form("form_hapus_barang"):
+                item_to_delete_id = st.selectbox(
+                    "Pilih barang yang akan dihapus:",
+                    options=all_items_df["id"],
+                    format_func=lambda x: f"ID: {x} - {all_items_df.loc[all_items_df['id'] == x, 'nama_barang'].values[0]}",
+                    key="select_delete"
                 )
-            st.success("Semua data berhasil diperbarui.")
-            st.rerun()
-
-        delete_id = st.selectbox("Pilih ID untuk dihapus:", df["id"])
-        if st.button("Hapus Baris"):
-            delete_prediction(delete_id)
-            st.warning("Data berhasil dihapus.")
-            st.rerun()
+                            
+                delete_submitted = st.form_submit_button("Hapus Barang Ini Secara Permanen", type="primary")
+                
+                if delete_submitted:
+                    delete_prediction(item_to_delete_id)
+                    st.success(f"Barang dengan ID {item_to_delete_id} telah dihapus.", icon="🗑️")
+                    st.rerun() 
 
 elif menu == "List Barang":
     if "username" not in st.session_state:
@@ -134,4 +168,3 @@ elif menu == "List Barang":
 
 
     st.dataframe(df.head(9))
-
