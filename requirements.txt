@@ -6,5 +6,7 @@ seaborn
 openpyxl
 mysql-connector-python
 supabase
-
-
+selenium
+pytest
+webdriver-manager
+pytest-html
