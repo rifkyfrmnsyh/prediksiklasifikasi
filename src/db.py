@@ -37,10 +37,7 @@ def fetch_predictions():
 def delete_prediction(id):
     supabase.table("predictions").delete().eq("id", id).execute()
 
-def update_prediction(id, nama_barang, harga, diskon, label):
+def update_prediction(id, nama_barang):
     supabase.table("predictions").update({
         "nama_barang": nama_barang,
-        "harga": float(harga),
-        "diskon": float(diskon),
-        "prediction_label": label
     }).eq("id", id).execute()
