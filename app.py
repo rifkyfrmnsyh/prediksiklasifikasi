@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import pandas as pd
 
@@ -16,7 +18,8 @@ from src.db import save_prediction, fetch_predictions, update_prediction, delete
 from src.model import tune_model, evaluate_model
 from src.util import get_user_input
 
-from page.login import login 
+from page.login import login
+from page.crud_page import show_crud_page # <-- Impor fungsi halaman CRUD
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -29,7 +32,8 @@ df = load_data('data/DataSparePart.xlsx')
 
 df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-df = drop_unused_columns(df, ['nama_barang'])
+# Hapus 'nama_barang' dari drop_unused_columns karena akan digunakan di input
+# df = drop_unused_columns(df, ['nama_barang'])
 df = handle_missing_values(df)
 
 df = encode_target(df, 'harga_kelas')
@@ -38,7 +42,8 @@ st.sidebar.title("Navigasi")
 
 role = st.session_state.get("role", "user") 
 if role == "admin":
-    options = ["List Barang","Prediksi", "Kelola Barang"]
+    # Tambahkan opsi "Kelola Barang" untuk admin
+    options = ["List Barang", "Prediksi", "Riwayat Prediksi", "Kelola Barang"]
 else:
     options = ["List Barang"]
 
@@ -51,13 +56,22 @@ if st.sidebar.button("🔒 Keluar"):
     st.success("Anda telah keluar.")
     st.rerun()
 
+# --- Logika Navigasi ---
 if menu == "Prediksi":
     st.title("🎯 Prediksi Kelas Harga")
 
-    df, scaler_dict = scale_columns(df, ['harga', 'diskon'])
-    X, y = split_features_target(df, 'harga_kelas')
+    # Kolom numerik yang akan di-scale
+    numeric_cols = ['harga', 'diskon']
+    df, scaler_dict = scale_columns(df, numeric_cols)
+    
+    # Pisahkan fitur dan target
+    # 'nama_barang' tidak boleh ada di X saat melatih model
+    X, y = split_features_target(df.drop(columns=['nama_barang']), 'harga_kelas')
 
+    # Dapatkan input dari pengguna
     input_df = get_user_input(X.columns, st)
+    
+    # Siapkan input untuk model (tanpa 'nama_barang')
     input_df_model = input_df.drop(columns=['nama_barang'], errors="ignore")
     input_df_model = transform_input(input_df_model, scaler_dict)
 
@@ -66,7 +80,7 @@ if menu == "Prediksi":
     model_name = "Gaussian Naive Bayes"
 
     if st.button("Tuning dan Prediksi"):
-        with st.spinner("Melakukan hyperparameter tuning untuk Gaussian Naive Bayes ..."):
+        with st.spinner("Melakukan hyperparameter tuning..."):
             model, best_params = tune_model(model_name, X_train, y_train)
         st.success("Tuning selesai!")
         st.write(f"Best params: {best_params}")
@@ -81,81 +95,63 @@ if menu == "Prediksi":
         st.info(f"📊 Akurasi model: **{accuracy:.2f}**")
 
         if "username" in st.session_state:
+            # Menggunakan input_df yang masih berisi semua informasi
             save_prediction(
                 input_df,
                 pred_label,
             )
 
-elif menu == "Kelola Barang":
-    st.title("📦 Kelola Data Barang")
+elif menu == "Riwayat Prediksi":
+    st.title("📜 Riwayat Prediksi")
 
-    tab_riwayat ,tab_ubah, tab_hapus = st.tabs([ "📜 Riwayat Prediksi","✏️ Ubah Barang", "❌ Hapus Barang"])
- 
-    try:
-        all_items_df = fetch_predictions()
-    except Exception as e:
-        st.error(f"Gagal memuat data barang: {e}")
-        all_items_df = pd.DataFrame() 
-    
-    with tab_riwayat:
-        st.header("Riwayat Prediksi Barang")
-        if all_items_df.empty:
-            st.info("Tidak ada riwayat prediksi. Silakan lakukan prediksi terlebih dahulu.")
-        else:
-            st.dataframe(all_items_df, use_container_width=True)
-            st.download_button(
-                label="Unduh Riwayat Prediksi",
-                data=all_items_df.to_csv(index=False).encode('utf-8'),
-                file_name='riwayat_prediksi.csv',
-                mime='text/csv'
-            )
+    if "username" not in st.session_state:
+        st.warning("Anda belum login.")
+        st.stop()
 
-    with tab_ubah:
-        st.header("Pilih dan Ubah Data Barang")
-        if all_items_df.empty:
-            st.info("Tidak ada data barang yang bisa diubah. Silakan tambah barang terlebih dahulu.")
-        else:
-            item_to_edit_id = st.selectbox(
-                "Pilih barang yang akan diubah:",
-                options=all_items_df["id"],
-                format_func=lambda x: f"ID: {x} - {all_items_df.loc[all_items_df['id'] == x, 'nama_barang'].values[0]}",
-                key="select_edit"
-            )
-            
-            selected_item = all_items_df[all_items_df["id"] == item_to_edit_id].iloc[0]
+    df_predictions = fetch_predictions()
 
-            with st.form("form_ubah_barang"):
-                st.write(f"**Mengubah Data untuk ID:** {selected_item['id']}")
-                
-                updated_nama = st.text_input("Nama Barang", value=selected_item["nama_barang"])
+    if df_predictions.empty:
+        st.info("Tidak ada riwayat prediksi yang ditemukan.")
+    else:
+        edited_df = st.data_editor(
+            df_predictions,
+            column_config={
+                "id": st.column_config.Column(disabled=True),
+                # Anda bisa menambahkan konfigurasi lain di sini
+            },
+            num_rows="dynamic",
+            use_container_width=True,
+            key="data_editor_riwayat"
+        )
 
-                update_submitted = st.form_submit_button("Simpan Perubahan")
-                if update_submitted:
-                    update_prediction(
-                        item_to_edit_id, updated_nama
-                    )
-                    st.success(f"Data barang '{updated_nama}' berhasil diperbarui!", icon="🔄")
-                    st.rerun() 
-
-    with tab_hapus:
-        st.header("Hapus Data Barang")
-        if all_items_df.empty:
-            st.info("Tidak ada data barang yang bisa dihapus.")
-        else:
-            with st.form("form_hapus_barang"):
-                item_to_delete_id = st.selectbox(
-                    "Pilih barang yang akan dihapus:",
-                    options=all_items_df["id"],
-                    format_func=lambda x: f"ID: {x} - {all_items_df.loc[all_items_df['id'] == x, 'nama_barang'].values[0]}",
-                    key="select_delete"
+        if st.button("Simpan Perubahan"):
+            # Lakukan perbandingan untuk menemukan baris yang berubah
+            # (Streamlit tidak secara langsung memberitahu baris mana yang diubah)
+            # Untuk simplisitas, kita update semua baris.
+            # Untuk aplikasi skala besar, sebaiknya bandingkan edited_df dengan df_predictions
+            for _, row in edited_df.iterrows():
+                update_prediction(
+                    row["id"],
+                    row["nama_barang"],
+                    row["harga"],
+                    row["diskon"],
+                    row["prediction_label"]
                 )
-                            
-                delete_submitted = st.form_submit_button("Hapus Barang Ini Secara Permanen", type="primary")
-                
-                if delete_submitted:
-                    delete_prediction(item_to_delete_id)
-                    st.success(f"Barang dengan ID {item_to_delete_id} telah dihapus.", icon="🗑️")
-                    st.rerun() 
+            st.success("Semua data berhasil diperbarui.")
+            st.rerun()
+
+        # Opsi Hapus
+        if not edited_df.empty:
+            delete_id = st.selectbox("Pilih ID untuk dihapus:", edited_df["id"])
+            if st.button("Hapus Baris", type="primary"):
+                delete_prediction(delete_id)
+                st.warning("Data berhasil dihapus.")
+                st.rerun()
+
+
+elif menu == "Kelola Barang":
+    show_crud_page()
+
 
 elif menu == "List Barang":
     if "username" not in st.session_state:
@@ -163,8 +159,7 @@ elif menu == "List Barang":
         st.stop()
     st.success("Selamat Datang! Di SparePart Aldi Motor",   icon="👋")
     st.title("List Barang")
-    df = load_data('data/DataSparePart.xlsx')
-    df = df.drop(columns=['harga_kelas'], errors='ignore')
+    df_display = load_data('data/DataSparePart.xlsx')
+    df_display = df_display.drop(columns=['harga_kelas'], errors='ignore')
 
-
-    st.dataframe(df.head(9))
+    st.dataframe(df_display.head(9))
