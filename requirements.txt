@@ -6,5 +6,5 @@ seaborn
 openpyxl
 mysql-connector-python
 supabase
-
-
+pytest
+pytest-mock
