@@ -6,5 +6,12 @@ seaborn
 openpyxl
 mysql-connector-python
 supabase
+<<<<<<< HEAD
 pytest
 pytest-mock
+=======
+selenium
+pytest
+webdriver-manager
+pytest-html
+>>>>>>> 20bd3971b243dab2fd67b8f7bca1e7fc4db5ccb4
