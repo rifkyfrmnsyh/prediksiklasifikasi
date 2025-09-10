@@ -16,7 +16,7 @@ def get_user_input(columns, st):
 
     for col in columns:
         if col != 'nama_barang': 
-             user_input[col] = st.number_input(f"Masukkan nilai untuk {col}", value=0.0)
+             user_input[col] = st.number_input(f"Masukkan nilai untuk {col}", value=0)
 
     df = pd.DataFrame([user_input])
     df["nama_barang"] = nama_barang
