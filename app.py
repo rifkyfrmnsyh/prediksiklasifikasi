@@ -82,7 +82,7 @@ if menu == "Prediksi":
         with st.spinner("Melakukan hyperparameter tuning..."):
             model, best_params = tune_model(model_name, X_train, y_train)
         st.success("Tuning selesai!")
-        st.write(f"Best params: {best_params}")
+        # st.write(f"Best params: {best_params}")
 
         accuracy, _ = evaluate_model(model, X_test, y_test)
         prediction = model.predict(input_df_model)[0]
@@ -124,10 +124,6 @@ elif menu == "Riwayat Prediksi":
         )
 
         if st.button("Simpan Perubahan"):
-            # Lakukan perbandingan untuk menemukan baris yang berubah
-            # (Streamlit tidak secara langsung memberitahu baris mana yang diubah)
-            # Untuk simplisitas, kita update semua baris.
-            # Untuk aplikasi skala besar, sebaiknya bandingkan edited_df dengan df_predictions
             for _, row in edited_df.iterrows():
                 update_prediction(
                     row["id"],
