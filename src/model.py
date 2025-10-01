@@ -39,34 +39,15 @@ def evaluate_model(model, X_test, y_test):
 
     if hasattr(model, "predict_proba"):
         y_proba = model.predict_proba(X_test)[:, 1]
-        auc = roc_auc_score(y_test, y_proba)
-    else:
-        auc = None
+
 
     report = classification_report(y_test, y_pred, output_dict=True)
 
-    st.subheader("📊 Confusion Matrix")
-    cm = confusion_matrix(y_test, y_pred)
-    fig, ax = plt.subplots()
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-    st.pyplot(fig)
 
     st.subheader("📄 Classification Report")
-    st.json(report)
 
     st.write(f"**Accuracy:** {accuracy:.3f}")
     st.write(f"**F1-score:** {f1:.3f}")
 
-    if auc is not None:
-        st.write(f"**ROC AUC:** {auc:.3f}")
-        fpr, tpr, _ = roc_curve(y_test, y_proba)
-        fig2, ax2 = plt.subplots()
-        ax2.plot(fpr, tpr, label=f"AUC = {auc:.3f}")
-        ax2.plot([0, 1], [0, 1], linestyle="--", color="gray")
-        ax2.set_xlabel("False Positive Rate")
-        ax2.set_ylabel("True Positive Rate")
-        ax2.set_title("ROC Curve")
-        ax2.legend()
-        st.pyplot(fig2)
 
     return accuracy, report
