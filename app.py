@@ -78,11 +78,13 @@ if menu == "Prediksi":
 
     model_name = "Gaussian Naive Bayes"
 
-    if st.button("Tuning dan Prediksi"):
-        with st.spinner("Melakukan hyperparameter tuning..."):
-            model, best_params = tune_model(model_name, X_train, y_train)
-        st.success("Tuning selesai!")
-        # st.write(f"Best params: {best_params}")
+    if st.button("Prediksi"):
+        st.spinner("Melatih model...")  # Opsional, bisa tetap pakai spinner
+
+        from src.model import get_models, evaluate_model
+
+        model = get_models()[model_name]  # Ambil model default
+        model.fit(X_train, y_train)       # Latih model
 
         accuracy, _ = evaluate_model(model, X_test, y_test)
         prediction = model.predict(input_df_model)[0]
@@ -94,11 +96,11 @@ if menu == "Prediksi":
         st.info(f"📊 Akurasi model: **{accuracy:.2f}**")
 
         if "username" in st.session_state:
-            # Menggunakan input_df yang masih berisi semua informasi
             save_prediction(
                 input_df,
                 pred_label,
             )
+
 
 elif menu == "Riwayat Prediksi":
     st.title("📜 Riwayat Prediksi")
