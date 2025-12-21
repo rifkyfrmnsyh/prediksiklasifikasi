@@ -42,7 +42,7 @@ st.sidebar.title("Navigasi")
 role = st.session_state.get("role", "user") 
 if role == "admin":
     # Tambahkan opsi "Kelola Barang" untuk admin
-    options = ["List Barang", "Prediksi", "Riwayat Prediksi", "Kelola Barang"]
+    options = ["List Barang", "Prediksi", "Hasil Prediksi", "Kelola Barang"]
 else:
     options = ["List Barang"]
 
@@ -102,8 +102,8 @@ if menu == "Prediksi":
             )
 
 
-elif menu == "Riwayat Prediksi":
-    st.title("📜 Riwayat Prediksi")
+elif menu == "Hasil Prediksi":
+    st.title("📜 Hasil Prediksi")
 
     if "username" not in st.session_state:
         st.warning("Anda belum login.")
@@ -112,7 +112,7 @@ elif menu == "Riwayat Prediksi":
     df_predictions = fetch_predictions()
 
     if df_predictions.empty:
-        st.info("Tidak ada riwayat prediksi yang ditemukan.")
+        st.info("Tidak ada hasil prediksi yang ditemukan.")
     else:
         edited_df = st.data_editor(
             df_predictions,
