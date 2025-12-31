@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from src.db import fetch_items, create_item, update_item_name, delete_item
+from src.db import fetch_items, create_item, update_item, delete_item
 
 def show_crud_page():
     st.title("📦 Kelola Daftar Barang")
@@ -23,12 +23,13 @@ def show_crud_page():
     with tab1:
         st.header("Tambah Barang Baru")
         with st.form("create_form", clear_on_submit=True):
-            new_item_name = st.text_input("Nama Barang Baru", placeholder="Contoh: Busi Iridium")
+            new_item_name = st.text_input("Nama Barang Baru")
+            new_harga_modal = st.number_input("Harga Modal", min_value=0.0)
             submitted_create = st.form_submit_button("Tambah Barang")
             
-            if submitted_create and new_item_name:
+            if submitted_create:
                 try:
-                    create_item(new_item_name)
+                    create_item(new_item_name, new_harga_modal)
                     st.success(f"Berhasil menambahkan '{new_item_name}'!")
                     st.rerun() 
                 except Exception as e:
@@ -50,12 +51,13 @@ def show_crud_page():
                     options=items_df['id'], 
                     format_func=lambda x: f"{x} - {items_df.loc[items_df['id'] == x, 'nama_barang'].iloc[0]}"
                 )
-                updated_item_name = st.text_input("Nama Barang Baru", key="update_name")
+                updated_item_name = st.text_input("Nama Barang Baru")
+                updated_harga_modal = st.number_input("Harga Modal Baru", min_value=0.0)
                 submitted_update = st.form_submit_button("Simpan Perubahan")
 
                 if submitted_update and item_to_update_id and updated_item_name:
                     try:
-                        update_item_name(item_to_update_id, updated_item_name)
+                        update_item(item_to_update_id, updated_item_name, updated_harga_modal)
                         st.success(f"Berhasil mengubah data barang ID {item_to_update_id}!")
                         st.rerun()
                     except Exception as e:
