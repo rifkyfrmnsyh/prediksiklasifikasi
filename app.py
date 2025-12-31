@@ -15,7 +15,7 @@ from src.preprocessing import (
 
 from src.db import save_prediction, fetch_predictions, update_prediction, delete_prediction
 from src.model import tune_model, evaluate_model
-from src.util import get_user_input
+from src.util import get_user_input, get_harga_modal
 
 from page.login import login
 from page.crud_page import show_crud_page # <-- Impor fungsi halaman CRUD
@@ -42,7 +42,7 @@ st.sidebar.title("Navigasi")
 role = st.session_state.get("role", "user") 
 if role == "admin":
     # Tambahkan opsi "Kelola Barang" untuk admin
-    options = ["List Barang", "Prediksi", "Hasil Prediksi", "Kelola Barang"]
+    options = ["List Barang", "Prediksi", "Riwayat Prediksi", "Kelola Barang"]
 else:
     options = ["List Barang"]
 
@@ -79,7 +79,18 @@ if menu == "Prediksi":
     model_name = "Gaussian Naive Bayes"
 
     if st.button("Prediksi"):
-        st.spinner("Melatih model...")  # Opsional, bisa tetap pakai spinner
+        st.spinner("Melatih model...") 
+
+        harga_jual = input_df["harga"].values[0]
+        nama_barang = input_df["nama_barang"].values[0]
+        harga_modal = get_harga_modal(nama_barang)
+
+        keuntungan = ((harga_jual - harga_modal) / harga_modal) * 100
+
+        if keuntungan < 10:
+            label_profit = "Murah"
+        else:
+            label_profit = "Mahal"
 
         from src.model import get_models, evaluate_model
 
@@ -95,6 +106,10 @@ if menu == "Prediksi":
         st.success(f"✅ Prediksi kelas: **{pred_label}**")
         st.info(f"📊 Akurasi model: **{accuracy:.2f}**")
 
+        st.write(f"💰 Harga Modal: Rp {harga_modal:,.0f}")
+        st.write(f"📈 Keuntungan: {keuntungan:.2f}%")
+        st.success(f"📌 Klasifikasi Keuntungan: **{label_profit}**")
+
         if "username" in st.session_state:
             save_prediction(
                 input_df,
@@ -102,8 +117,8 @@ if menu == "Prediksi":
             )
 
 
-elif menu == "Hasil Prediksi":
-    st.title("📜 Hasil Prediksi")
+elif menu == "Riwayat Prediksi":
+    st.title("📜 Riwayat Prediksi")
 
     if "username" not in st.session_state:
         st.warning("Anda belum login.")
@@ -112,7 +127,7 @@ elif menu == "Hasil Prediksi":
     df_predictions = fetch_predictions()
 
     if df_predictions.empty:
-        st.info("Tidak ada hasil prediksi yang ditemukan.")
+        st.info("Tidak ada riwayat prediksi yang ditemukan.")
     else:
         edited_df = st.data_editor(
             df_predictions,
