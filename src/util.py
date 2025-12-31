@@ -1,7 +1,8 @@
 # util.py
 
 import pandas as pd
-from src.db import get_item_names # Impor fungsi baru
+from src.db import get_item_names
+from src.db import supabase
 
 def get_user_input(columns, st):
     user_input = {}
@@ -15,8 +16,8 @@ def get_user_input(columns, st):
     nama_barang = st.selectbox("Pilih nama barang", options=list_nama_barang)
 
     for col in columns:
-        if col != 'nama_barang': 
-             user_input[col] = st.number_input(f"Masukkan nilai untuk {col}", value=0)
+        if col not in ['nama_barang']:
+            user_input[col] = st.number_input(f"Masukkan nilai untuk {col}", value=0)
 
     df = pd.DataFrame([user_input])
     df["nama_barang"] = nama_barang
@@ -26,3 +27,11 @@ def get_user_input(columns, st):
         df = df[cols]
         
     return df
+        
+def get_harga_modal(nama_barang):
+    res = supabase.table("items") \
+        .select("harga_modal") \
+        .eq("nama_barang", nama_barang) \
+        .execute()
+    return res.data[0]["harga_modal"]
+        
