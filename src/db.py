@@ -43,15 +43,27 @@ def update_prediction(id, nama_barang):
     }).eq("id", id).execute()
 
 def fetch_items():
-    response = supabase.table("items").select("id, nama_barang").order("id").execute()
+    response = supabase.table("items") \
+        .select("id, nama_barang, harga_modal") \
+        .order("id") \
+        .execute()
     return pd.DataFrame(response.data)
 
-def create_item(nama_barang):
-    data = {"nama_barang": nama_barang}
+
+def create_item(nama_barang, harga_modal):
+    data = {
+        "nama_barang": nama_barang,
+        "harga_modal": harga_modal
+    }
     supabase.table("items").insert(data).execute()
 
-def update_item_name(item_id, new_nama_barang):
-    supabase.table("items").update({"nama_barang": new_nama_barang}).eq("id", item_id).execute()
+
+def update_item(item_id, new_nama_barang, new_harga_modal):
+    supabase.table("items").update({
+        "nama_barang": new_nama_barang,
+        "harga_modal": new_harga_modal
+    }).eq("id", item_id).execute()
+
 
 def delete_item(item_id):
     supabase.table("items").delete().eq("id", item_id).execute()
