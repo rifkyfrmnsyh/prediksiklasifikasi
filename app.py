@@ -42,7 +42,7 @@ st.sidebar.title("Navigasi")
 role = st.session_state.get("role", "user") 
 if role == "admin":
     # Tambahkan opsi "Kelola Barang" untuk admin
-    options = ["List Barang", "Prediksi", "Riwayat Prediksi", "Kelola Barang"]
+    options = ["List Barang", "Prediksi", "Hasil Prediksi", "Kelola Barang"]
 else:
     options = ["List Barang"]
 
@@ -102,7 +102,7 @@ if menu == "Prediksi":
             )
 
 
-elif menu == "Riwayat Prediksi":
+elif menu == "Hasil Prediksi":
     st.title("📜 Riwayat Prediksi")
 
     if "username" not in st.session_state:
