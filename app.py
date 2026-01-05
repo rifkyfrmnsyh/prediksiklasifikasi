@@ -15,7 +15,7 @@ from src.preprocessing import (
 
 from src.db import save_prediction, fetch_predictions, update_prediction, delete_prediction
 from src.model import tune_model, evaluate_model
-from src.util import get_user_input, get_harga_modal
+from src.util import get_user_input
 
 from page.login import login
 from page.crud_page import show_crud_page # <-- Impor fungsi halaman CRUD
@@ -79,18 +79,7 @@ if menu == "Prediksi":
     model_name = "Gaussian Naive Bayes"
 
     if st.button("Prediksi"):
-        st.spinner("Melatih model...") 
-
-        harga_jual = input_df["harga"].values[0]
-        nama_barang = input_df["nama_barang"].values[0]
-        harga_modal = get_harga_modal(nama_barang)
-
-        keuntungan = ((harga_jual - harga_modal) / harga_modal) * 100
-
-        if keuntungan < 10:
-            label_profit = "Murah"
-        else:
-            label_profit = "Mahal"
+        st.spinner("Melatih model...")  # Opsional, bisa tetap pakai spinner
 
         from src.model import get_models, evaluate_model
 
@@ -105,10 +94,6 @@ if menu == "Prediksi":
 
         st.success(f"✅ Prediksi kelas: **{pred_label}**")
         st.info(f"📊 Akurasi model: **{accuracy:.2f}**")
-
-        st.write(f"💰 Harga Modal: Rp {harga_modal:,.0f}")
-        st.write(f"📈 Keuntungan: {keuntungan:.2f}%")
-        st.success(f"📌 Klasifikasi Keuntungan: **{label_profit}**")
 
         if "username" in st.session_state:
             save_prediction(
