@@ -103,7 +103,7 @@ if menu == "Prediksi":
 
 
 elif menu == "Hasil Prediksi":
-    st.title("📜 Riwayat Prediksi")
+    st.title("📜 Hasil Prediksi")
 
     if "username" not in st.session_state:
         st.warning("Anda belum login.")
